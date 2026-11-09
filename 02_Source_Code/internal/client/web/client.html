@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>GhostFrame-TLS Pro 客户端</title>
+<style>
+  :root {
+    --bg-main: #0a0e17;
+    --bg-card: rgba(18, 24, 38, 0.85);
+    --bg-card-border: rgba(0, 240, 255, 0.18);
+    --neon-cyan: #00f0ff;
+    --neon-green: #00ff88;
+    --neon-red: #ff2a6d;
+    --neon-amber: #ffb800;
+    --text-primary: #f0f6fc;
+    --text-secondary: #8b949e;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  body {
+    background: var(--bg-main);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background-image: 
+      radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
+      radial-gradient(circle at 85% 85%, rgba(0, 255, 136, 0.05) 0%, transparent 45%),
+      linear-gradient(rgba(10, 14, 23, 0.95), rgba(10, 14, 23, 0.95)),
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 240, 255, 0.015) 2px, rgba(0, 240, 255, 0.015) 4px);
+  }
+  .app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 16px 20px;
+    gap: 14px;
+  }
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--bg-card-border);
+    padding-bottom: 10px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: #fff;
+  }
+  .logo-icon {
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
+  }
+  .badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--neon-red);
+    box-shadow: 0 0 6px var(--neon-red);
+  }
+  .badge-dot.connected {
+    background: var(--neon-green);
+    box-shadow: 0 0 8px var(--neon-green);
+    animation: pulse 2s infinite;
+  }
+  .badge-dot.connecting {
+    background: var(--neon-amber);
+    box-shadow: 0 0 8px var(--neon-amber);
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.9); }
+  }
+
+  /* Grid Layout */
+  .grid-main {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 16px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Left Panel: Controls & Node */
+  .panel-left {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--bg-card-border);
+    border-radius: 12px;
+    padding: 16px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+  .card-node {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .node-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--neon-cyan);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .node-info-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .node-info-val {
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+  }
+
+  /* Main Action Button */
+  .btn-connect {
+    width: 100%;
+    height: 72px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: all 0.25s ease;
+    color: #fff;
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(0, 255, 136, 0.25));
+    border: 1px solid var(--neon-cyan);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.25), inset 0 0 10px rgba(0, 240, 255, 0.1);
+  }
+  .btn-connect:hover {
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.45), inset 0 0 15px rgba(0, 240, 255, 0.2);
+    transform: translateY(-1px);
+  }
+  .btn-connect:active {
+    transform: translateY(1px);
+  }
+  .btn-connect.connected {
+    background: linear-gradient(135deg, rgba(255, 42, 109, 0.2), rgba(255, 75, 43, 0.25));
+    border: 1px solid var(--neon-red);
+    box-shadow: 0 0 20px rgba(255, 42, 109, 0.3), inset 0 0 10px rgba(255, 42, 109, 0.1);
+  }
+  .btn-connect.connected:hover {
+    box-shadow: 0 0 30px rgba(255, 42, 109, 0.5);
+  }
+  .btn-sub {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    opacity: 0.8;
+    letter-spacing: 0;
+  }
+
+  /* Toggle Row */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .toggle-label {
+    font-size: 13px;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+  }
+  .toggle-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(255, 255, 255, 0.15);
+    transition: .3s;
+    border-radius: 24px;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #fff;
+    transition: .3s;
+    border-radius: 50%;
+  }
+  input:checked + .slider {
+    background-color: var(--neon-green);
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+  }
+  input:checked + .slider:before {
+    transform: translateX(20px);
+  }
+
+  /* Quick Actions */
+  .action-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: var(--text-primary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-secondary:hover {
+    background: rgba(0, 240, 255, 0.1);
+    border-color: var(--neon-cyan);
+  }
+
+  /* Right Panel: Chart & Logs */
+  .panel-right {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 0;
+  }
+  .chart-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 180px;
+  }
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .speed-meters {
+    display: flex;
+    gap: 20px;
+  }
+  .speed-meter {
+    display: flex;
+    flex-direction: column;
+  }
+  .speed-meter-title {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .speed-meter-val {
+    font-size: 16px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+  .speed-up { color: var(--neon-cyan); }
+  .speed-down { color: var(--neon-green); }
+
+  .canvas-box {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    min-height: 100px;
+  }
+  #trafficCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+  }
+
+  /* Logs Card */
+  .logs-card {
+    height: 170px;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 14px;
+  }
+  .logs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .log-container {
+    flex: 1;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.6;
+    padding-top: 6px;
+    color: #a0aec0;
+  }
+  .log-line {
+    word-break: break-all;
+    user-select: text;
+  }
+  .log-time {
+    color: var(--text-secondary);
+    margin-right: 8px;
+  }
+  .log-line.error { color: var(--neon-red); }
+  .log-line.success { color: var(--neon-green); }
+
+  /* Toast Notification */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: rgba(18, 24, 38, 0.95);
+    border: 1px solid var(--neon-cyan);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    pointer-events: none;
+    z-index: 999;
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Top Header -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <span>GhostFrame-TLS Pro</span>
+    </div>
+    <div class="header-actions">
+      <div class="badge">
+        <span class="badge-dot" id="statusDot"></span>
+        <span id="statusText">未连接</span>
+      </div>
+      <div class="badge">
+        <span>延迟</span>
+        <span id="pingVal" style="color:var(--neon-green);">-- ms</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="grid-main">
+    <!-- Left Column -->
+    <div class="panel-left">
+      <!-- Main Connect Button -->
+      <button class="btn-connect" id="btnConnect" onclick="toggleConnect()">
+        <span id="btnText">立即连接</span>
+        <span class="btn-sub" id="btnSub">点击开启 TLS 1.3 隐蔽隧道</span>
+      </button>
+
+      <!-- Node Info Card -->
+      <div class="card card-node">
+        <div class="node-title">
+          <span>🇯🇵</span>
+          <span id="nodeName">日本东京节点 (GhostFrame)</span>
+        </div>
+        <div class="node-info-row">
+          <span>服务器目标:</span>
+          <span class="node-info-val" id="nodeEndpoint">216.23.84.249:8443</span>
+        </div>
+        <div class="node-info-row">
+          <span>混淆协议:</span>
+          <span class="node-info-val" style="color:var(--neon-green);">TLS1.3 + Dynamic Knock</span>
+        </div>
+        <div class="node-info-row">
+          <span>证书校验:</span>
+          <span class="node-info-val" style="color:var(--neon-cyan);">SHA-256 Pinning</span>
+        </div>
+        <div class="node-info-row">
+          <span>SOCKS5 代理:</span>
+          <span class="node-info-val" id="socksAddr">127.0.0.1:10808</span>
+        </div>
+        <div class="node-info-row">
+          <span>HTTP 代理:</span>
+          <span class="node-info-val" id="httpAddr">127.0.0.1:10809</span>
+        </div>
+      </div>
+
+      <!-- Settings Card -->
+      <div class="card">
+        <div class="toggle-row">
+          <div class="toggle-label">
+            <span>系统代理自动配置</span>
+            <span class="toggle-sub">Windows 全局 IE/Edge 代理 (10809)</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chkSysProxy" onchange="toggleSysProxy(this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="action-btns" style="margin-top: 12px;">
+          <button class="btn-secondary" onclick="copyClashYAML()">
+            📋 复制 Clash 节点
+          </button>
+          <button class="btn-secondary" onclick="copyGFTLink()">
+            🔗 复制 gft:// 链接
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="panel-right">
+      <!-- Live Traffic Chart Card -->
+      <div class="card chart-card">
+        <div class="chart-header">
+          <span style="font-size:13px; font-weight:600; color:var(--text-secondary);">实时流量吞吐</span>
+          <div class="speed-meters">
+            <div class="speed-meter">
+              <span class="speed-meter-title">实时上行</span>
+              <span class="speed-meter-val speed-up" id="speedUp">0.0 KB/s</span>
+            </div>
+            <div class="speed-meter">
+              <span class="speed-meter-title">实时下行</span>
+              <span class="speed-meter-val speed-down" id="speedDown">0.0 KB/s</span>
+            </div>
+            <div class="speed-meter">
+              <span class="speed-meter-title">累计上行</span>
+              <span class="speed-meter-val" id="totalUp" style="color:var(--text-primary); font-size:13px;">0 MB</span>
+            </div>
+            <div class="speed-meter">
+              <span class="speed-meter-title">累计下行</span>
+              <span class="speed-meter-val" id="totalDown" style="color:var(--text-primary); font-size:13px;">0 MB</span>
+            </div>
+          </div>
+        </div>
+        <div class="canvas-box">
+          <canvas id="trafficCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Logs Card -->
+      <div class="card logs-card">
+        <div class="logs-header">
+          <span>客户端实时控制台日志</span>
+          <span style="cursor:pointer; color:var(--neon-cyan);" onclick="clearLogs()">清空日志</span>
+        </div>
+        <div class="log-container" id="logContainer">
+          <!-- Log lines inserted dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// --- UI State & Zero-GC Chart Engine ---
+let curState = "disconnected";
+let clashYAMLData = "";
+let linkURIData = "";
+
+const canvas = document.getElementById('trafficCanvas');
+const ctx = canvas.getContext('2d');
+
+// Preallocated ring buffers for zero-allocation rendering (AGENTS rule 1)
+const MAX_POINTS = 60;
+const upHistory = new Float32Array(MAX_POINTS);
+const downHistory = new Float32Array(MAX_POINTS);
+let historyLen = 0;
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+  return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+}
+
+function formatSpeed(bytesPerSec) {
+  if (bytesPerSec < 1024) return bytesPerSec + " B/s";
+  if (bytesPerSec < 1024 * 1024) return (bytesPerSec / 1024).toFixed(1) + " KB/s";
+  return (bytesPerSec / (1024 * 1024)).toFixed(2) + " MB/s";
+}
+
+// HiDPI adaptation (AGENTS rule 2)
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.resetTransform();
+  ctx.scale(dpr, dpr);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function drawChart() {
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width;
+  const h = rect.height;
+  ctx.clearRect(0, 0, w, h);
+
+  // Background Grid Lines
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 1; i <= 3; i++) {
+    const y = (h / 4) * i;
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+  }
+  ctx.stroke();
+
+  if (historyLen < 2) return;
+
+  // Find max value in current buffer
+  let maxVal = 10 * 1024; // Min scale: 10 KB/s
+  for (let i = 0; i < historyLen; i++) {
+    if (upHistory[i] > maxVal) maxVal = upHistory[i];
+    if (downHistory[i] > maxVal) maxVal = downHistory[i];
+  }
+
+  const step = w / (MAX_POINTS - 1);
+  const startX = w - (historyLen - 1) * step;
+
+  // Draw Downlink Area & Line (Neon Green)
+  ctx.fillStyle = "rgba(0, 255, 136, 0.12)";
+  ctx.strokeStyle = "#00ff88";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(startX, h);
+  for (let i = 0; i < historyLen; i++) {
+    const x = startX + i * step;
+    const y = h - (downHistory[i] / maxVal) * (h - 10);
+    ctx.lineTo(x, y);
+  }
+  ctx.lineTo(w, h);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  for (let i = 0; i < historyLen; i++) {
+    const x = startX + i * step;
+    const y = h - (downHistory[i] / maxVal) * (h - 10);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Draw Uplink Line (Neon Cyan)
+  ctx.strokeStyle = "#00f0ff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < historyLen; i++) {
+    const x = startX + i * step;
+    const y = h - (upHistory[i] / maxVal) * (h - 10);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.innerText = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// --- API Calls ---
+async function fetchStatus() {
+  try {
+    const res = await fetch('/api/status');
+    if (!res.ok) return;
+    const data = await res.json();
+    curState = data.state;
+    clashYAMLData = data.clash_yaml;
+    linkURIData = data.link_uri;
+
+    // Update Status Badge & Button
+    const dot = document.getElementById('statusDot');
+    const stText = document.getElementById('statusText');
+    const btn = document.getElementById('btnConnect');
+    const btnText = document.getElementById('btnText');
+    const btnSub = document.getElementById('btnSub');
+    const pingVal = document.getElementById('pingVal');
+
+    dot.className = "badge-dot " + (curState === "connected" ? "connected" : (curState === "connecting" ? "connecting" : ""));
+    btn.className = "btn-connect " + (curState === "connected" ? "connected" : "");
+
+    if (curState === "connected") {
+      stText.innerText = "已连接";
+      btnText.innerText = "断开连接";
+      btnSub.innerText = "安全隧道正常运行中";
+      pingVal.innerText = (data.ping_ms || 0) + " ms";
+    } else if (curState === "connecting") {
+      stText.innerText = "连接中...";
+      btnText.innerText = "正在握手...";
+      btnSub.innerText = "正在执行 Knock 握手验证";
+      pingVal.innerText = "-- ms";
+    } else {
+      stText.innerText = data.last_err ? "连接异常" : "未连接";
+      btnText.innerText = "立即连接";
+      btnSub.innerText = "点击开启 TLS 1.3 隐蔽隧道";
+      pingVal.innerText = "-- ms";
+    }
+
+    // Update node details
+    if (data.node_host) {
+      document.getElementById('nodeEndpoint').innerText = data.node_host + ":" + data.node_port;
+    }
+    if (data.socks_addr) document.getElementById('socksAddr').innerText = data.socks_addr;
+    if (data.http_addr) document.getElementById('httpAddr').innerText = data.http_addr;
+    document.getElementById('chkSysProxy').checked = !!data.sys_proxy;
+
+    // Update Speed Values
+    document.getElementById('speedUp').innerText = formatSpeed(data.up_bps || 0);
+    document.getElementById('speedDown').innerText = formatSpeed(data.down_bps || 0);
+    document.getElementById('totalUp').innerText = formatBytes(data.total_up || 0);
+    document.getElementById('totalDown').innerText = formatBytes(data.total_down || 0);
+
+    // Update History Chart Buffer
+    if (data.history && Array.isArray(data.history)) {
+      historyLen = Math.min(data.history.length, MAX_POINTS);
+      for (let i = 0; i < historyLen; i++) {
+        upHistory[i] = data.history[i].up || 0;
+        downHistory[i] = data.history[i].down || 0;
+      }
+      drawChart();
+    }
+  } catch (err) {
+    // ignore temporary fetch error
+  }
+}
+
+async function fetchLogs() {
+  try {
+    const res = await fetch('/api/logs');
+    if (!res.ok) return;
+    const logs = await res.json();
+    const box = document.getElementById('logContainer');
+    const wasAtBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 20;
+
+    box.innerHTML = logs.map(l => {
+      let cls = "log-line";
+      if (l.message.includes("failed") || l.message.includes("Error") || l.message.includes("lost")) cls += " error";
+      else if (l.message.includes("successfully") || l.message.includes("Connected")) cls += " success";
+      return `<div class="${cls}"><span class="log-time">[${l.time}]</span>${escapeHTML(l.message)}</div>`;
+    }).join('');
+
+    if (wasAtBottom) {
+      box.scrollTop = box.scrollHeight;
+    }
+  } catch (err) {}
+}
+
+function escapeHTML(str) {
+  return str.replace(/[&<>'"]/g, 
+    tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+}
+
+async function toggleConnect() {
+  if (curState === "connected") {
+    await fetch('/api/disconnect', { method: 'POST' });
+  } else {
+    await fetch('/api/connect', { method: 'POST' });
+  }
+  fetchStatus();
+}
+
+async function toggleSysProxy(enable) {
+  await fetch('/api/sysproxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ enable: enable })
+  });
+  showToast(enable ? "系统代理已开启" : "系统代理已关闭");
+}
+
+function copyClashYAML() {
+  if (!clashYAMLData) return;
+  navigator.clipboard.writeText(clashYAMLData);
+  showToast("Clash Verge 节点配置已复制到剪贴板！");
+}
+
+function copyGFTLink() {
+  if (!linkURIData) return;
+  navigator.clipboard.writeText(linkURIData);
+  showToast("gft:// 节点导入链接已复制！");
+}
+
+function clearLogs() {
+  document.getElementById('logContainer').innerHTML = "";
+}
+
+// Polling intervals
+setInterval(fetchStatus, 1000);
+setInterval(fetchLogs, 1500);
+fetchStatus();
+fetchLogs();
+</script>
+</body>
+</html>

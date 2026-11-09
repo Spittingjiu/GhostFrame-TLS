@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GhostFrame-TLS Pro &middot; Stealth Node Console</title>
+<style>
+:root {
+  --bg-dark: #0a0e17;
+  --bg-card: #121826;
+  --bg-card-hover: #192236;
+  --border-color: #232f45;
+  --primary-cyan: #00f0ff;
+  --primary-purple: #a855f7;
+  --accent-green: #10b981;
+  --accent-red: #ef4444;
+  --accent-amber: #f59e0b;
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+  padding: 24px;
+}
+.container { max-width: 1200px; margin: 0 auto; }
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 24px;
+}
+.logo-box { display: flex; align-items: center; gap: 12px; }
+.logo-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--primary-cyan), var(--primary-purple));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; color: #000; font-size: 18px;
+}
+h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+.badge {
+  font-size: 11px; padding: 3px 8px; border-radius: 9999px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.badge-green { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+.badge-red { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+.badge-amber { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+.btn {
+  background: #1f293d; color: var(--text-main); border: 1px solid var(--border-color);
+  padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;
+  transition: all 0.2s; font-size: 13px;
+}
+.btn:hover { background: #2d3b56; border-color: var(--primary-cyan); }
+.btn-primary { background: #0284c7; border-color: var(--primary-cyan); }
+.btn-primary:hover { background: #0369a1; }
+.btn-danger { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border-color: var(--accent-red); }
+.btn-danger:hover { background: rgba(239, 68, 68, 0.4); }
+
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.card {
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  border-radius: 10px; padding: 18px; position: relative; overflow: hidden;
+}
+.card-title { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
+.card-val { font-size: 26px; font-weight: 700; color: #fff; font-family: monospace; }
+.card-sub { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+.section-box {
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  border-radius: 10px; padding: 20px; margin-bottom: 24px;
+}
+.section-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+canvas { width: 100%; height: 200px; background: #0d121c; border-radius: 6px; border: 1px solid #1a2334; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border-color); color: var(--text-muted); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); }
+tr:hover td { background: var(--bg-card-hover); }
+
+.form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 16px; }
+.form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.form-group input {
+  width: 100%; background: #0c1018; border: 1px solid var(--border-color);
+  padding: 8px 12px; border-radius: 6px; color: #fff; font-family: monospace;
+}
+.form-group input:focus { outline: none; border-color: var(--primary-cyan); }
+.code-box {
+  background: #090d14; border: 1px solid var(--border-color); border-radius: 6px;
+  padding: 12px; font-family: monospace; font-size: 12px; color: #38bdf8;
+  word-break: break-all; margin-bottom: 12px; user-select: all;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo-box">
+      <div class="logo-icon">G</div>
+      <div>
+        <h1>GhostFrame-TLS Pro <span class="badge badge-green">Stealth Node Active</span></h1>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Japan Tokyo VPS &middot; Port 8443 (TLS 1.3 + BBR)</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <span id="uptime-tag" style="font-size: 12px; color: var(--text-muted); font-family: monospace;">Uptime: 0s</span>
+      <button class="btn btn-danger" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- 4 Stats Cards -->
+  <div class="grid-4">
+    <div class="card">
+      <div class="card-title">Realtime Throughput</div>
+      <div class="card-val" id="val-speed">0 KB/s</div>
+      <div class="card-sub" id="val-speed-sub">&uarr; 0 KB/s &nbsp;&middot;&nbsp; &darr; 0 KB/s</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Cumulative Traffic</div>
+      <div class="card-val" id="val-total">0 MB</div>
+      <div class="card-sub" id="val-total-sub">Sent: 0 MB &middot; Recv: 0 MB</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Active Tunnels</div>
+      <div class="card-val" id="val-conns" style="color: var(--primary-cyan);">0</div>
+      <div class="card-sub">Multiplexed client sessions</div>
+    </div>
+    <div class="card">
+      <div class="card-title">System & Resources</div>
+      <div class="card-val" id="val-mem" style="font-size: 20px; padding-top: 4px;">0 MB RAM</div>
+      <div class="card-sub" id="val-goroutines">Goroutines: 0</div>
+    </div>
+  </div>
+
+  <!-- Realtime Bandwidth Graph -->
+  <div class="section-box">
+    <div class="section-title">
+      <span>Live Bandwidth Timeline (&uarr; Upload Neon Purple &nbsp;|&nbsp; &darr; Download Neon Cyan)</span>
+      <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;">120s Rolling Window</span>
+    </div>
+    <canvas id="bwChart" width="1160" height="200"></canvas>
+  </div>
+
+  <!-- Threat Awareness & Fallback Audit Table -->
+  <div class="section-box">
+    <div class="section-title">
+      <span>Threat Awareness & Probe Fallback Traps</span>
+      <span class="badge badge-amber" id="audit-count">0 Probes Trapped</span>
+    </div>
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Probed Remote IP</th>
+            <th>Trigger Count</th>
+            <th>Detected Trap Reason</th>
+            <th>First Probed</th>
+            <th>Last Probed</th>
+            <th>Defense Action</th>
+          </tr>
+        </thead>
+        <tbody id="audit-tbody">
+          <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No suspicious probe logs recorded yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Obfuscation Configuration Center -->
+  <div class="section-box">
+    <div class="section-title">
+      <span>Obfuscation Parameters (Hot-Reloadable)</span>
+      <button class="btn btn-primary" onclick="saveParams()">Apply Hot-Update</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>PadMin (Bytes)</label>
+        <input type="number" id="pmin" min="0" max="255">
+      </div>
+      <div class="form-group">
+        <label>PadMax (Bytes)</label>
+        <input type="number" id="pmax" min="0" max="255">
+      </div>
+      <div class="form-group">
+        <label>PadProb (% Probability)</label>
+        <input type="number" id="pprob" min="0" max="100">
+      </div>
+      <div class="form-group">
+        <label>Heartbeat Min (ms)</label>
+        <input type="number" id="hbmin" min="1000">
+      </div>
+      <div class="form-group">
+        <label>Heartbeat Max (ms)</label>
+        <input type="number" id="hbmax" min="1000">
+      </div>
+    </div>
+  </div>
+
+  <!-- Connection & Clash Config -->
+  <div class="section-box">
+    <div class="section-title"><span>Node Export & Integration</span></div>
+    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">Universal GFT Import URI:</div>
+    <div class="code-box" id="link-box">Loading gft:// link...</div>
+    <button class="btn" onclick="copyText('link-box')">Copy gft:// Link</button>
+    
+    <div style="margin-top: 18px; font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">Clash Verge / Meta Proxy Configuration YAML:</div>
+    <pre class="code-box" id="clash-box" style="white-space: pre;">Loading YAML...</pre>
+    <button class="btn" onclick="copyText('clash-box')">Copy Clash YAML</button>
+  </div>
+</div>
+
+<script>
+function fmtBytes(b) {
+  if (!b || b <= 0) return '0 B';
+  const u = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(b) / Math.log(1024));
+  return (b / Math.pow(1024, i)).toFixed(1) + ' ' + u[i];
+}
+
+function fmtSec(s) {
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m ${sec}s`;
+  return `${m}m ${sec}s`;
+}
+
+let linkData = null;
+
+async function fetchStats() {
+  try {
+    const res = await fetch('api/stats');
+    if (!res.ok) return;
+    const data = await res.json();
+    document.getElementById('uptime-tag').textContent = 'Uptime: ' + fmtSec(data.uptime_sec);
+    document.getElementById('val-conns').textContent = data.active;
+    
+    const tf = data.traffic;
+    document.getElementById('val-speed').textContent = fmtBytes(tf.up_rate + tf.down_rate) + '/s';
+    document.getElementById('val-speed-sub').innerHTML = `&uarr; ${fmtBytes(tf.up_rate)}/s &nbsp;&middot;&nbsp; &darr; ${fmtBytes(tf.down_rate)}/s`;
+    document.getElementById('val-total').textContent = fmtBytes(tf.up_total + tf.down_total);
+    document.getElementById('val-total-sub').textContent = `Sent: ${fmtBytes(tf.down_total)} · Recv: ${fmtBytes(tf.up_total)}`;
+    
+    document.getElementById('val-mem').textContent = data.system.alloc_mb + ' MB RAM';
+    document.getElementById('val-goroutines').textContent = 'Goroutines: ' + data.system.goroutines;
+    
+    drawChart(tf.hist_up, tf.hist_down);
+  } catch (e) {}
+}
+
+const canvas = document.getElementById('bwChart');
+const ctx = canvas.getContext('2d');
+
+function drawChart(upArr, downArr) {
+  if (!upArr || !downArr || upArr.length === 0) return;
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  // Background grid
+  ctx.strokeStyle = '#1e293b';
+  ctx.lineWidth = 1;
+  for (let y = 40; y < h; y += 40) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+
+  let maxVal = 1024 * 10;
+  for (let i = 0; i < upArr.length; i++) {
+    if (upArr[i] > maxVal) maxVal = upArr[i];
+    if (downArr[i] > maxVal) maxVal = downArr[i];
+  }
+
+  const step = w / 120;
+  const off = 120 - upArr.length;
+
+  function renderLine(arr, color) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < arr.length; i++) {
+      const x = (off + i) * step;
+      const y = h - (arr[i] / maxVal) * (h - 20) - 10;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  renderLine(upArr, '#a855f7'); // Upload
+  renderLine(downArr, '#00f0ff'); // Download
+}
+
+async function fetchAudit() {
+  try {
+    const res = await fetch('api/audit');
+    if (!res.ok) return;
+    const list = await res.json();
+    document.getElementById('audit-count').textContent = list.length + ' Probes Trapped';
+    const tbody = document.getElementById('audit-tbody');
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No suspicious probe logs recorded yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(item => {
+      const reasons = Object.entries(item.reasons || {}).map(([r, c]) => `${r}(${c})`).join(', ') || 'probe';
+      const banBtn = item.banned 
+        ? `<button class="btn btn-primary" onclick="setBan('${item.ip}', false)">Unban</button>`
+        : `<button class="btn btn-danger" onclick="setBan('${item.ip}', true)">Ban IP</button>`;
+      return `<tr>
+        <td style="font-family: monospace; font-weight: 600;">${item.ip}</td>
+        <td><span class="badge ${item.count > 5 ? 'badge-red' : 'badge-amber'}">${item.count}</span></td>
+        <td><span style="font-family: monospace; color: #f43f5e;">${reasons}</span></td>
+        <td style="font-size: 11px; color: var(--text-muted);">${item.first ? new Date(item.first).toLocaleTimeString() : '-'}</td>
+        <td style="font-size: 11px; color: var(--text-muted);">${item.last ? new Date(item.last).toLocaleTimeString() : '-'}</td>
+        <td>${banBtn}</td>
+      </tr>`;
+    }).join('');
+  } catch (e) {}
+}
+
+async function setBan(ip, banned) {
+  await fetch('api/ban', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ip, banned })
+  });
+  fetchAudit();
+}
+
+async function fetchParams() {
+  try {
+    const res = await fetch('api/params');
+    if (!res.ok) return;
+    const p = await res.json();
+    document.getElementById('pmin').value = p.pmin;
+    document.getElementById('pmax').value = p.pmax;
+    document.getElementById('pprob').value = p.pprob;
+    document.getElementById('hbmin').value = p.hbmin;
+    document.getElementById('hbmax').value = p.hbmax;
+  } catch (e) {}
+}
+
+async function saveParams() {
+  const p = {
+    pmin: parseInt(document.getElementById('pmin').value, 10),
+    pmax: parseInt(document.getElementById('pmax').value, 10),
+    pprob: parseInt(document.getElementById('pprob').value, 10),
+    hbmin: parseInt(document.getElementById('hbmin').value, 10),
+    hbmax: parseInt(document.getElementById('hbmax').value, 10),
+  };
+  const res = await fetch('api/params', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(p)
+  });
+  if (res.ok) alert('Obfuscation parameters hot-updated successfully!');
+  else alert('Failed to update parameters.');
+}
+
+async function fetchLink() {
+  try {
+    const res = await fetch('api/link');
+    if (!res.ok) return;
+    const data = await res.json();
+    linkData = data;
+    document.getElementById('link-box').textContent = data.uri;
+    
+    const clashYaml = `- name: "Japan-GhostFrame-Node"
+  type: socks5
+  server: 127.0.0.1
+  port: 10808
+  # Local GhostFrame Client automatically tunnels traffic over TLS 1.3
+  # Remote Node: ${data.link.host}:${data.link.port}
+  # Cert Pin: ${data.pin}`;
+    document.getElementById('clash-box').textContent = clashYaml;
+  } catch (e) {}
+}
+
+function copyText(id) {
+  const el = document.getElementById(id);
+  navigator.clipboard.writeText(el.textContent).then(() => {
+    alert('Copied to clipboard!');
+  });
+}
+
+async function logout() {
+  await fetch('api/logout', { method: 'POST' });
+  location.reload();
+}
+
+// Initial fetch & poll
+fetchStats();
+fetchAudit();
+fetchParams();
+fetchLink();
+setInterval(fetchStats, 1000);
+setInterval(fetchAudit, 5000);
+</script>
+</body>
+</html>
